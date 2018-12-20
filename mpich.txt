@@ -1,0 +1,108 @@
+Change hostname
+
+sudo nano /etc/hostname                                        //Change hostname
+ctrl+o, ctrl+x
+sudo nano /etc/hosts                                           //Change hostname
+ctrl+o, ctrl+x
+sudo reboot
+
+Installing MPICH
+
+sudo apt-get update
+sudo mkdir mpich2
+cd ~/mpich2 
+http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz
+sudo tar xfz mpich-3.2.tar.gz
+sudo mkdir /home/rpimpi/
+sudo mkdir /home/rpimpi/mpi-install
+mkdir /home/pi/mpi-build 
+sudo apt-get install gfortran 
+sudo /home/pi/mpich2/mpich-3.2/configure -prefix=/home/rpimpi/mpi-install
+sudo make
+sudo make install
+cd ..
+nano .bashrc
+                  PATH=$PATH:/home/rpimpi/mpi-install/bin (paste at the end)
+sudo reboot 
+mpiexec -n 1 hostname
+
+Installing MPI4PY
+
+wget https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4py-2.0.0.tar.gz   //Download mpi4py,its a zip file
+sudo tar -zxf mpi4py-2.0.0.tar.gz                // Extract or unzip the file
+cd mpi4py-2.0.0                                  // change directory
+sudo aptitude install python-dev                 // install python in mpi4py directory
+python setup.py build                            // download setup.py  
+sudo python setup.py install                     // install setup.py
+export PYTHONPATH=/home/pi/mpi4py-2.0.0 
+mpiexec -n 5 python demo/helloworld.py           // check whether python is working
+
+Machinefile
+
+nano machinefile                                 //Enter IP address of all pi's, master first
+mpiexec -n 1 hostname                            //Should give hostname of pi
+mpiexec -f machinefile -n 4 hostname             //This sould give hostname of all pi's but it will fail
+
+ssh-keygen                                       //ssh with ip
+cd ~
+cd .ssh
+cp id_rsa.pub pi01
+
+ssh pi@10.0.0.132
+ssh-keygen
+cd .ssh
+cp id_rsa.pub pi02
+scp 10.0.0.121:/home/pi/.ssh/pi01 .               //Add dot also
+cat pi01 >> authorized_keys
+exit
+
+ssh pi@10.0.0.133
+ssh-keygen
+cd .ssh
+cp id_rsa.pub pi03
+scp 10.0.0.121:/home/pi/.ssh/pi01 .               //Add dot also
+cat pi01 >> authorized_keys
+exit
+
+ssh pi@10.0.0.134
+ssh-keygen
+cd .ssh
+cp id_rsa.pub pi04
+scp 10.0.0.121:/home/pi/.ssh/pi01 .               //Add dot also
+cat pi01 >> authorized_keys
+exit
+
+ssh pi@10.0.0.135
+ssh-keygen
+cd .ssh
+cp id_rsa.pub pi05
+scp 10.0.0.121:/home/pi/.ssh/pi01 .               //Add dot also
+cat pi01 >> authorized_keys
+exit
+
+scp 10.0.0.132:/home/pi/.ssh/pi02 .
+cat pi02 >> authorized_keys
+
+scp 10.0.0.133:/home/pi/.ssh/pi03 .
+cat pi03 >> authorized_keys
+
+scp 10.0.0.134:/home/pi/.ssh/pi04 .
+cat pi04 >> authorized_keys
+
+scp 10.0.0.135:/home/pi/.ssh/pi05 .
+cat pi05 >> authorized_keys
+
+cd ~
+
+mpiexec -f machinefile -n 5 hostname
+
+Run python code in cluster mode
+
+nano filename.py                             //creates python file. copy your code into that
+scp -r filename.py 10.0.0.121:/home/pi       // 10.0.0.121 is rpi01 ipaddress
+scp -r filename.py 10.0.0.132:/home/pi       // 10.0.0.132 is rpi02 ipaddress
+scp -r filename.py 10.0.0.133:/home/pi       // 10.0.0.133 is rpi03 ipaddress
+scp -r filename.py 10.0.0.134:/home/pi       // 10.0.0.134 is rpi04 ipaddress
+scp -r filename.py 10.0.0.135:/home/pi       // 10.0.0.135 is rpi05 ipaddress
+
+mpiexec -f machinefile -n 1 python filename.py
